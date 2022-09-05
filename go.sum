@@ -1,0 +1,6 @@
+github.com/takanoriyanagitani/go-sql2keyval v0.1.0 h1:gjLrtbPgTLiH7q+clKsGYgt07mU5HBL7SvRSfL9PXI8=
+github.com/takanoriyanagitani/go-sql2keyval v0.1.0/go.mod h1:2nDsKssUnTMkRJKc5AknLdJV9Nuo08cFXm0QXQH1be8=
+github.com/takanoriyanagitani/go-sql2keyval v0.5.0 h1:KeSUdn9JtL7Yo9TaSFWf8fCZdqS9CtRjNfV5nzF7MmE=
+github.com/takanoriyanagitani/go-sql2keyval v0.5.0/go.mod h1:olohv8venEYVbUBv1tG0rmS9rJID4vc53XRUbie6NHw=
+github.com/takanoriyanagitani/go-sql2keyval v0.6.0 h1:1Lgqf3+hvjJDiEhTH+eSd/dfYW9Zz8hMW8cFyNsZanE=
+github.com/takanoriyanagitani/go-sql2keyval v0.6.0/go.mod h1:olohv8venEYVbUBv1tG0rmS9rJID4vc53XRUbie6NHw=
