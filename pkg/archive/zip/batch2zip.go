@@ -96,10 +96,7 @@ func filelikeIter2zipBuilderNew(f2zb filelike2zipBuilder) filelikeIter2zipBuilde
 		var f2z func(ctx context.Context, f f2k.FileLike) error = f2zb(z)
 		return func(ctx context.Context, many s2k.Iter[f2k.FileLike]) error {
 			return s2k.IterReduce(many, nil, func(e error, f f2k.FileLike) error {
-				if nil != e {
-					return e
-				}
-				return f2z(ctx, f)
+				return f2k.IfOk(e, func() error { return f2z(ctx, f) })
 			})
 		}
 	}
@@ -113,12 +110,10 @@ func filelikeIter2FsBuilder(b filelikeIter2zipBuilder) func(file io.Writer) f2k.
 		return func(ctx context.Context, many s2k.Iter[f2k.FileLike]) error {
 			var zw *zip.Writer = zip.NewWriter(file)
 			var sfb f2k.SetFilelikeBatch = b(zw)
-			e := sfb(ctx, many)
-			if nil == e {
-				return zw.Close()
-			}
-			defer zw.Close()
-			return e
+			return f2k.ErrorWarn(
+				func() error { return sfb(ctx, many) },
+				func() error { return zw.Close() },
+			)
 		}
 	}
 }

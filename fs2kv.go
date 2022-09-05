@@ -71,3 +71,28 @@ func Batch2FilelikeNew(b2s Bytes2string) Batch2FileLike {
 		})
 	}
 }
+
+func ErrorWarn(funcError func() error, funcWarn func() error) error {
+	e := funcError()
+	if nil == e {
+		return funcWarn()
+	}
+	defer funcWarn()
+	return e
+}
+
+func Error1st(f []func() error) error {
+	return s2k.IterReduce(s2k.IterFromArray(f), nil, func(e error, item func() error) error {
+		if nil == e {
+			return item()
+		}
+		return e
+	})
+}
+
+func IfOk(e error, f func() error) error {
+	return Error1st([]func() error{
+		func() error { return e },
+		f,
+	})
+}
