@@ -2,6 +2,7 @@ package fs2kv
 
 import (
 	"context"
+	"io/fs"
 	"path"
 	"regexp"
 	"unicode/utf8"
@@ -23,6 +24,8 @@ type FileLike struct {
 type Batch2FileLike func(b s2k.Batch) s2k.Option[FileLike]
 
 type SetFilelikeBatch func(ctx context.Context, many s2k.Iter[FileLike]) error
+
+type SetFsFileBatch func(ctx context.Context, many s2k.Iter[fs.File]) error
 
 var Utf8validator KeyValidator = utf8.Valid
 
@@ -96,3 +99,7 @@ func IfOk(e error, f func() error) error {
 		f,
 	})
 }
+
+func file2info(f fs.File) (fs.FileInfo, error) { return f.Stat() }
+
+var File2Info func(fs.File) Result[fs.FileInfo] = ResultBuilderNew1(file2info)
