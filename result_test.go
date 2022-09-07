@@ -101,4 +101,26 @@ func TestResult(t *testing.T) {
 		checkerMsg(t, func() bool { return nil != rsqrt(-1.0).Error() }, "Must fail")
 		checkerMsg(t, func() bool { return nil != rsqrt(0.0).Error() }, "Must fail")
 	})
+
+	t.Run("TryForEach", func(t *testing.T) {
+		var ok1 Result[int] = ResultNew(42, nil)
+		ignore := func(_ int) error { return nil }
+		checkErr(ok1.TryForEach(ignore), func(e error) { t.Errorf("Unexpected error: %v", e) })
+
+		alwaysErr := func(_ int) error { return fmt.Errorf("Must fail") }
+		checkerMsg(t, func() bool { return nil != ok1.TryForEach(alwaysErr) }, "Must fail")
+
+		var ng1 Result[int] = ResultNew(0, fmt.Errorf("Must fail"))
+		checkerMsg(t, func() bool { return nil != ng1.TryForEach(ignore) }, "Must fail")
+	})
+
+	t.Run("UnwrapOrElse", func(t *testing.T) {
+		var ok1 Result[int] = ResultNew(42, nil)
+		zero := func() int { return 0 }
+		checker(t, ok1.UnwrapOrElse(zero), 42)
+
+		var ng1 Result[int] = ResultNew(0, fmt.Errorf("Must fail"))
+		nz := func() int { return 42 }
+		checker(t, ng1.UnwrapOrElse(nz), 42)
+	})
 }

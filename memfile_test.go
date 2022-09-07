@@ -55,6 +55,7 @@ func TestMemfile(t *testing.T) {
 
 		checkerMsg(t, func() bool { return nil == mf.Sys() }, "Non nil sys")
 		checkerMsg(t, func() bool { return nil == mf.Close() }, "Non nil error")
+		checkerMsg(t, func() bool { return 0 < mf.ModTime().Unix() }, "Negative unixtime.")
 
 		var rfi Result[fs.FileInfo] = ResultNew(mf.Stat())
 		checkResult(rfi, func(e error) { t.Errorf("Unable to get file info: %v", e) })
