@@ -2,6 +2,7 @@ package fs2kv
 
 import (
 	"fmt"
+	"io"
 	"io/fs"
 	"testing"
 )
@@ -130,5 +131,29 @@ func TestMain(t *testing.T) {
 		checker(t, fi.Name(), "filename")
 		checker(t, fi.Size(), int64(len("content")))
 		checker(t, fi.Mode(), 0644)
+	})
+
+	t.Run("FileExFromStd", func(t *testing.T) {
+		t.Parallel()
+
+		var mf fs.File = MemFileNew("filenm", []byte("data"), 0644)
+		var rf Result[FileEx] = FileExFromStd(mf)
+		checker(t, rf.IsOk(), true)
+
+		var fe FileEx = rf.Value()
+		checker(t, fe.Name(), "filenm")
+
+		var f fs.File = fe.File()
+
+		var rfi Result[fs.FileInfo] = File2Info(f)
+		checker(t, rfi.IsOk(), true)
+
+		var fi fs.FileInfo = rfi.Value()
+		checker(t, fi.Mode(), 0644)
+
+		b, e := io.ReadAll(f)
+		checkErr(e, func(e error) { t.Errorf("Unexpected error: %v", e) })
+
+		checkBytes(t, b, []byte("data"))
 	})
 }
