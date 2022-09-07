@@ -258,4 +258,22 @@ func TestResult(t *testing.T) {
 		})
 	})
 
+	t.Run("UnwrapOr", func(t *testing.T) {
+		t.Parallel()
+
+		var rf Result[float64] = sqrt2result(-9.0)
+		var f float64 = rf.UnwrapOr(-1.0)
+		checker(t, f, -1.0)
+	})
+
+	t.Run("ResultWrapIter", func(t *testing.T) {
+		t.Parallel()
+
+		var ii s2k.Iter[int] = s2k.IterFromArray([]int{333, 634})
+		var ir s2k.Iter[Result[int]] = ResultWrapIter(ii)
+		var mapd s2k.Iter[int] = s2k.IterMap(ir, func(ri Result[int]) int { return ri.UnwrapOr(0) })
+		var iadd func(a, b int) int = func(a, b int) int { return a + b }
+		var tot int = s2k.IterReduce(mapd, 0, iadd)
+		checker(t, tot, 333+634)
+	})
 }
