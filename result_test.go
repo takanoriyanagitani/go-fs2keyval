@@ -276,4 +276,11 @@ func TestResult(t *testing.T) {
 		var tot int = s2k.IterReduce(mapd, 0, iadd)
 		checker(t, tot, 333+634)
 	})
+
+	t.Run("IsOk", func(t *testing.T) {
+		t.Parallel()
+
+		var rng Result[int] = ResultNg[int](fmt.Errorf("Must fail"))
+		checker(t, rng.IsOk(), false)
+	})
 }
