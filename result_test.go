@@ -117,11 +117,11 @@ func TestResult(t *testing.T) {
 
 	t.Run("UnwrapOrElse", func(t *testing.T) {
 		var ok1 Result[int] = ResultNew(42, nil)
-		zero := func() int { return 0 }
+		zero := func(error) int { return 0 }
 		checker(t, ok1.UnwrapOrElse(zero), 42)
 
 		var ng1 Result[int] = ResultNew(0, fmt.Errorf("Must fail"))
-		nz := func() int { return 42 }
+		nz := func(error) int { return 42 }
 		checker(t, ng1.UnwrapOrElse(nz), 42)
 	})
 }

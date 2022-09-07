@@ -2,7 +2,6 @@ package batch2zip
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"io/fs"
 	"os"
@@ -44,8 +43,8 @@ func stdFiles2zipBuilderNew(z *tpzip.Zip) f2k.SetFsFileBatch {
 				var rf f2k.Result[tpzip.File] = stdFile2file(f)
 				var f2z func(tpzip.File) error = tc(ctx)
 				var re f2k.Result[error] = f2k.ResultMap(rf, f2z)
-				return re.UnwrapOrElse(func() error {
-					return fmt.Errorf("Unable to convert std file: %v", rf.Error())
+				return re.UnwrapOrElse(func(e error) error {
+					return e
 				})
 			})
 		})

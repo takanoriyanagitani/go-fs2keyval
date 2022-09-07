@@ -24,42 +24,54 @@ func file2hdr(f f2k.FileEx) f2k.Result[*tar.Header] {
 	})
 }
 
-func file2tarEx(_ctx context.Context, fe f2k.FileEx, tw *tar.Writer) error {
-	var th f2k.Result[*tar.Header] = file2hdr(fe)
+func file2tarExRes(_ctx context.Context, fe f2k.Result[f2k.FileEx], tw *tar.Writer) error {
+	var th f2k.Result[*tar.Header] = f2k.ResultFlatMap(fe, file2hdr)
 	return th.TryForEach(func(h *tar.Header) error {
 		return f2k.Error1st([]func() error{
 			func() error { return tw.WriteHeader(h) },
 			func() error {
-				_, e := io.Copy(tw, fe.File())
-				return e
+				var re f2k.Result[error] = f2k.ResultMap(fe, func(f f2k.FileEx) error {
+					_, e := io.Copy(tw, f.File())
+					return e
+				})
+				return re.UnwrapOrElse(func(e error) error {
+					return e
+				})
 			},
 		})
 	})
 }
 
-func files2tarEx(ctx context.Context, files s2k.Iter[f2k.FileEx], tw *tar.Writer) error {
-	return s2k.IterReduce(files, nil, func(e error, f f2k.FileEx) error {
+func files2tarExRes(ctx context.Context, files s2k.Iter[f2k.Result[f2k.FileEx]], tw *tar.Writer) error {
+	return s2k.IterReduce(files, nil, func(e error, f f2k.Result[f2k.FileEx]) error {
 		return f2k.IfOk(e, func() error {
-			return file2tarEx(ctx, f, tw)
+			return file2tarExRes(ctx, f, tw)
 		})
 	})
 }
 
+func files2tarEx(ctx context.Context, files s2k.Iter[f2k.FileEx], tw *tar.Writer) error {
+	var ri s2k.Iter[f2k.Result[f2k.FileEx]] = f2k.ResultWrapIter(files)
+	return files2tarExRes(ctx, ri, tw)
+}
+
 func files2tar(ctx context.Context, files s2k.Iter[fs.File], tw *tar.Writer) error {
-	return s2k.IterReduce(files, nil, func(e error, f fs.File) error {
-		var re f2k.Result[f2k.FileEx] = f2k.FileExFromStd(f)
-		return f2k.IfOk(e, func() error {
-			return re.TryForEach(func(fe f2k.FileEx) error {
-				return file2tarEx(ctx, fe, tw)
-			})
-		})
-	})
+	var ri s2k.Iter[f2k.Result[f2k.FileEx]] = s2k.IterMap(files, f2k.FileExFromStd)
+	return files2tarExRes(ctx, ri, tw)
 }
 
 func files2tarWriterEx(ctx context.Context, files s2k.Iter[f2k.FileEx], w io.Writer) error {
 	var tw *tar.Writer = tar.NewWriter(w)
 	return f2k.ErrorWarn(
 		func() error { return files2tarEx(ctx, files, tw) },
+		func() error { return tw.Close() },
+	)
+}
+
+func files2tarWriterExRes(ctx context.Context, files s2k.Iter[f2k.Result[f2k.FileEx]], w io.Writer) error {
+	var tw *tar.Writer = tar.NewWriter(w)
+	return f2k.ErrorWarn(
+		func() error { return files2tarExRes(ctx, files, tw) },
 		func() error { return tw.Close() },
 	)
 }

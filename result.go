@@ -8,7 +8,7 @@ type Result[T any] interface {
 	Value() T
 	Error() error
 	TryForEach(f func(T) error) error
-	UnwrapOrElse(f func() T) T
+	UnwrapOrElse(f func(error) T) T
 	Map(f func(T) T) Result[T]
 	Ok() s2k.Option[T]
 }
@@ -18,7 +18,7 @@ type resultOk[T any] struct{ val T }
 func (r resultOk[T]) Value() T                         { return r.val }
 func (r resultOk[T]) Error() error                     { return nil }
 func (r resultOk[T]) TryForEach(f func(T) error) error { return f(r.val) }
-func (r resultOk[T]) UnwrapOrElse(_ func() T) T        { return r.val }
+func (r resultOk[T]) UnwrapOrElse(_ func(error) T) T   { return r.val }
 func (r resultOk[T]) Map(f func(T) T) Result[T]        { return ResultNew(f(r.val), nil) }
 func (r resultOk[T]) Ok() s2k.Option[T]                { return s2k.OptionNew(r.val) }
 
@@ -29,7 +29,7 @@ type resultNg[T any] struct{ err error }
 func (r resultNg[T]) Value() (t T)                     { return }
 func (r resultNg[T]) Error() error                     { return r.err }
 func (r resultNg[T]) TryForEach(_ func(T) error) error { return r.err }
-func (r resultNg[T]) UnwrapOrElse(f func() T) T        { return f() }
+func (r resultNg[T]) UnwrapOrElse(f func(error) T) T   { return f(r.err) }
 func (r resultNg[T]) Map(_ func(T) T) Result[T]        { return r }
 func (r resultNg[T]) Ok() s2k.Option[T]                { return s2k.OptionEmptyNew[T]() }
 
@@ -120,4 +120,11 @@ func ResultsFlatten[T any](results s2k.Iter[s2k.Iter[Result[T]]]) s2k.Iter[Resul
 		}
 	}
 	return s2k.IterFromArray(ra)
+}
+
+func ResultWrapIter[T any](i s2k.Iter[T]) s2k.Iter[Result[T]] {
+	return func() s2k.Option[Result[T]] {
+		var ot s2k.Option[T] = i()
+		return s2k.OptionMap(ot, ResultOk[T])
+	}
 }
