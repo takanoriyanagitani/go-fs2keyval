@@ -8,6 +8,7 @@ require (
 	github.com/andybalholm/brotli v1.0.1 // indirect
 	github.com/dsnet/compress v0.0.2-0.20210315054119-f66993602bf5 // indirect
 	github.com/golang/snappy v0.0.2 // indirect
+	github.com/google/uuid v1.3.0 // indirect
 	github.com/klauspost/compress v1.11.4 // indirect
 	github.com/klauspost/pgzip v1.2.5 // indirect
 	github.com/mholt/archiver/v3 v3.5.1 // indirect

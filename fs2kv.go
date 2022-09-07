@@ -56,6 +56,20 @@ type SetFilelikeBatch func(ctx context.Context, many s2k.Iter[FileLike]) error
 
 type SetFsFileBatch func(ctx context.Context, many s2k.Iter[fs.File]) error
 type SetFilesBatch func(ctx context.Context, many s2k.Iter[FileEx]) error
+type SetFiles func(ctx context.Context, files s2k.Iter[Result[FileEx]]) error
+
+type BatchIter2Fs func(ctx context.Context, many s2k.Iter[s2k.Batch]) error
+
+func batchIter2fsBuilderNew(bi2f BatchIter2Files) func(SetFiles) BatchIter2Fs {
+	return func(f2b SetFiles) BatchIter2Fs {
+		return func(ctx context.Context, many s2k.Iter[s2k.Batch]) error {
+			var files s2k.Iter[Result[FileEx]] = bi2f(many)
+			return f2b(ctx, files)
+		}
+	}
+}
+
+var BatchIter2fsBuilderUuid func(SetFiles) BatchIter2Fs = batchIter2fsBuilderNew(BatchIter2FilesUuid)
 
 var Utf8validator KeyValidator = utf8.Valid
 
