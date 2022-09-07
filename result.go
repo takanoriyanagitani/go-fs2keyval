@@ -1,8 +1,6 @@
 package fs2kv
 
 import (
-	"fmt"
-
 	s2k "github.com/takanoriyanagitani/go-sql2keyval"
 )
 
@@ -10,6 +8,7 @@ type Result[T any] interface {
 	Value() T
 	Error() error
 	TryForEach(f func(T) error) error
+	UnwrapOrElse(f func() T) T
 }
 
 type resultOk[T any] struct{ val T }
@@ -17,12 +16,14 @@ type resultOk[T any] struct{ val T }
 func (r resultOk[T]) Value() T                         { return r.val }
 func (r resultOk[T]) Error() error                     { return nil }
 func (r resultOk[T]) TryForEach(f func(T) error) error { return f(r.val) }
+func (r resultOk[T]) UnwrapOrElse(_ func() T) T        { return r.val }
 
 type resultNg[T any] struct{ err error }
 
 func (r resultNg[T]) Value() (t T)                     { return }
 func (r resultNg[T]) Error() error                     { return r.err }
-func (r resultNg[T]) TryForEach(_ func(T) error) error { return fmt.Errorf("Error value only") }
+func (r resultNg[T]) TryForEach(_ func(T) error) error { return r.err }
+func (r resultNg[T]) UnwrapOrElse(f func() T) T        { return f() }
 
 func ResultNew[T any](val T, err error) Result[T] {
 	if nil == err {
@@ -61,4 +62,18 @@ func ResultFlatMap[T, U any](t Result[T], f func(T) Result[U]) Result[U] {
 		return f(t.Value())
 	}
 	return resultNg[U]{err: t.Error()}
+}
+
+func ResultMap[T, U any](t Result[T], f func(T) U) Result[U] {
+	return ResultFlatMap(t, func(val T) Result[U] {
+		var u U = f(val)
+		return ResultNew(u, nil)
+	})
+}
+
+func ResultCompose[T, U, V any](f func(T) Result[U], g func(U) Result[V]) func(T) Result[V] {
+	return func(t T) Result[V] {
+		var ru Result[U] = f(t)
+		return ResultFlatMap(ru, g)
+	}
 }

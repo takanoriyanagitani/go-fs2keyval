@@ -1,122 +1,94 @@
 package batch2zip
 
 import (
-	"archive/zip"
 	"context"
+	"fmt"
 	"io"
+	"io/fs"
+	"os"
+
+	tpzip "github.com/mholt/archiver/v3"
 
 	s2k "github.com/takanoriyanagitani/go-sql2keyval"
 
 	f2k "github.com/takanoriyanagitani/go-fs2keyval"
 )
 
-type zipWriter struct {
-	wtr io.Writer
-	err error
-}
-
-func (z *zipWriter) Write(b []byte) (int, error) { return z.wtr.Write(b) }
-
-type path2writerSet struct {
-	p2h  path2header
-	h2wb header2writerBuilder
-}
-
-type path2header func(p string) *zip.FileHeader
-type header2writer func(h *zip.FileHeader) zipWriter
-type header2writerBuilder func(w *zip.Writer) header2writer
-
-func path2headerBuilder(method uint16) path2header {
-	return func(p string) *zip.FileHeader {
-		return &zip.FileHeader{
-			Name:   p,
-			Method: method,
-		}
+func file2zipBuilderNew(z *tpzip.Zip) func(context.Context, tpzip.File) error {
+	return func(_ctx context.Context, f tpzip.File) error {
+		return z.Write(f)
 	}
 }
 
-var header2writerBuilderStoreNew header2writerBuilder = func(w *zip.Writer) header2writer {
-	return func(h *zip.FileHeader) (zw zipWriter) {
-		zw.wtr, zw.err = w.CreateHeader(h)
-		return
+func fileNew(FileInfo os.FileInfo, Header interface{}, ReadCloser io.ReadCloser) tpzip.File {
+	return tpzip.File{
+		FileInfo,
+		Header,
+		ReadCloser,
 	}
 }
 
-var header2writerBuilderRawNew header2writerBuilder = func(w *zip.Writer) header2writer {
-	return func(h *zip.FileHeader) (zw zipWriter) {
-		zw.wtr, zw.err = w.CreateRaw(h)
-		return
+func stdFile2file(sf fs.File) f2k.Result[tpzip.File] {
+	var ri f2k.Result[fs.FileInfo] = f2k.File2Info(sf)
+	return f2k.ResultMap(ri, func(fi fs.FileInfo) tpzip.File {
+		return fileNew(fi, nil, sf)
+	})
+}
+
+func stdFiles2zipBuilderNew(z *tpzip.Zip) f2k.SetFsFileBatch {
+	var tf2z func(context.Context, tpzip.File) error = file2zipBuilderNew(z)
+	var tc func(context.Context) func(tpzip.File) error = f2k.Curry(tf2z)
+	return func(ctx context.Context, files s2k.Iter[fs.File]) error {
+		return s2k.IterReduce(files, nil, func(e error, f fs.File) error {
+			return f2k.IfOk(e, func() error {
+				var rf f2k.Result[tpzip.File] = stdFile2file(f)
+				var f2z func(tpzip.File) error = tc(ctx)
+				var re f2k.Result[error] = f2k.ResultMap(rf, f2z)
+				return re.UnwrapOrElse(func() error {
+					return fmt.Errorf("Unable to convert std file: %v", rf.Error())
+				})
+			})
+		})
 	}
 }
 
-var path2headerStore path2header = path2headerBuilder(zip.Store)
-var path2headerRaw path2header = func(p string) *zip.FileHeader { return &zip.FileHeader{Name: p} }
+type ZipConfig func(z *tpzip.Zip) *tpzip.Zip
 
-var path2writerSetStore = path2writerSet{
-	p2h:  path2headerStore,
-	h2wb: header2writerBuilderStoreNew,
-}
-
-var path2writerSetRaw = path2writerSet{
-	p2h:  path2headerRaw,
-	h2wb: header2writerBuilderRawNew,
-}
-
-type path2writerBuilder func(z *zip.Writer) func(p string) zipWriter
-
-func path2writerBuilderNew(p2w path2writerSet) path2writerBuilder {
-	return func(z *zip.Writer) func(p string) zipWriter {
-		return s2k.Compose(p2w.p2h, p2w.h2wb(z))
+func zipConfigBuilderNew(method tpzip.ZipCompressionMethod) ZipConfig {
+	return func(z *tpzip.Zip) *tpzip.Zip {
+		z.FileMethod = method
+		return z
 	}
 }
 
-var path2writerBuilderStore path2writerBuilder = path2writerBuilderNew(path2writerSetStore)
-var path2writerBuilderRaw path2writerBuilder = path2writerBuilderNew(path2writerSetRaw)
+var zipConfigDefault ZipConfig = f2k.Identity[*tpzip.Zip]
+var zipConfigStore ZipConfig = zipConfigBuilderNew(tpzip.Store)
 
-type filelike2zipBuilder func(z *zip.Writer) func(ctx context.Context, f f2k.FileLike) error
+type zipWriterBuilder func(w io.Writer) f2k.Result[*tpzip.Zip]
 
-func filelike2zipBuilderNew(p2wb path2writerBuilder) filelike2zipBuilder {
-	return func(z *zip.Writer) func(ctx context.Context, f f2k.FileLike) error {
-		var p2w func(p string) zipWriter = p2wb(z)
-		return func(ctx context.Context, f f2k.FileLike) error {
-			var zw zipWriter = p2w(f.Path)
-			_, e := zw.Write(f.Val)
-			return e
-		}
+func zipWriterBuilderNew(cfg ZipConfig) func(w io.Writer) f2k.Result[*tpzip.Zip] {
+	return func(w io.Writer) f2k.Result[*tpzip.Zip] {
+		var z *tpzip.Zip = cfg(tpzip.NewZip())
+		e := z.Create(w)
+		return f2k.ResultNew(z, e)
 	}
 }
 
-var filelike2zipBuilderStore filelike2zipBuilder = filelike2zipBuilderNew(path2writerBuilderStore)
-var filelike2zipBuilderRaw filelike2zipBuilder = filelike2zipBuilderNew(path2writerBuilderRaw)
+var zipWriterBuilderDefault zipWriterBuilder = zipWriterBuilderNew(zipConfigDefault)
+var zipWriterBuilderStore zipWriterBuilder = zipWriterBuilderNew(zipConfigStore)
 
-type filelikeIter2zipBuilder func(z *zip.Writer) f2k.SetFilelikeBatch
-
-func filelikeIter2zipBuilderNew(f2zb filelike2zipBuilder) filelikeIter2zipBuilder {
-	return func(z *zip.Writer) f2k.SetFilelikeBatch {
-		var f2z func(ctx context.Context, f f2k.FileLike) error = f2zb(z)
-		return func(ctx context.Context, many s2k.Iter[f2k.FileLike]) error {
-			return s2k.IterReduce(many, nil, func(e error, f f2k.FileLike) error {
-				return f2k.IfOk(e, func() error { return f2z(ctx, f) })
+func files2zipBuilderFactoryNew(b zipWriterBuilder) func(w io.Writer) f2k.SetFsFileBatch {
+	return func(w io.Writer) f2k.SetFsFileBatch {
+		return func(ctx context.Context, files s2k.Iter[fs.File]) error {
+			var rz f2k.Result[*tpzip.Zip] = b(w)
+			return rz.TryForEach(func(z *tpzip.Zip) error {
+				defer z.Close()
+				var sfb f2k.SetFsFileBatch = stdFiles2zipBuilderNew(z)
+				return sfb(ctx, files)
 			})
 		}
 	}
 }
 
-var filelikeIter2zipBuilderStore filelikeIter2zipBuilder = filelikeIter2zipBuilderNew(filelike2zipBuilderStore)
-var filelikeIter2zipBuilderRaw filelikeIter2zipBuilder = filelikeIter2zipBuilderNew(filelike2zipBuilderRaw)
-
-func filelikeIter2FsBuilder(b filelikeIter2zipBuilder) func(file io.Writer) f2k.SetFilelikeBatch {
-	return func(file io.Writer) f2k.SetFilelikeBatch {
-		return func(ctx context.Context, many s2k.Iter[f2k.FileLike]) error {
-			var zw *zip.Writer = zip.NewWriter(file)
-			var sfb f2k.SetFilelikeBatch = b(zw)
-			return f2k.ErrorWarn(
-				func() error { return sfb(ctx, many) },
-				func() error { return zw.Close() },
-			)
-		}
-	}
-}
-
-var FilelikeIter2FsStored func(file io.Writer) f2k.SetFilelikeBatch = filelikeIter2FsBuilder(filelikeIter2zipBuilderStore)
-var FilelikeIter2FsRaw func(file io.Writer) f2k.SetFilelikeBatch = filelikeIter2FsBuilder(filelikeIter2zipBuilderRaw)
+var Files2ZipBuilderDefault func(w io.Writer) f2k.SetFsFileBatch = files2zipBuilderFactoryNew(zipWriterBuilderDefault)
+var Files2ZipBuilderStore func(w io.Writer) f2k.SetFsFileBatch = files2zipBuilderFactoryNew(zipWriterBuilderStore)
