@@ -50,24 +50,6 @@ func files2tarExRes(ctx context.Context, files s2k.Iter[f2k.Result[f2k.FileEx]],
 	})
 }
 
-func files2tarEx(ctx context.Context, files s2k.Iter[f2k.FileEx], tw *tar.Writer) error {
-	var ri s2k.Iter[f2k.Result[f2k.FileEx]] = f2k.ResultWrapIter(files)
-	return files2tarExRes(ctx, ri, tw)
-}
-
-func files2tar(ctx context.Context, files s2k.Iter[fs.File], tw *tar.Writer) error {
-	var ri s2k.Iter[f2k.Result[f2k.FileEx]] = s2k.IterMap(files, f2k.FileExFromStd)
-	return files2tarExRes(ctx, ri, tw)
-}
-
-func files2tarWriterEx(ctx context.Context, files s2k.Iter[f2k.FileEx], w io.Writer) error {
-	var tw *tar.Writer = tar.NewWriter(w)
-	return f2k.ErrorWarn(
-		func() error { return files2tarEx(ctx, files, tw) },
-		func() error { return tw.Close() },
-	)
-}
-
 func files2tarWriterExRes(ctx context.Context, files s2k.Iter[f2k.Result[f2k.FileEx]], w io.Writer) error {
 	var tw *tar.Writer = tar.NewWriter(w)
 	return f2k.ErrorWarn(
@@ -76,22 +58,16 @@ func files2tarWriterExRes(ctx context.Context, files s2k.Iter[f2k.Result[f2k.Fil
 	)
 }
 
-func files2tarWriter(ctx context.Context, files s2k.Iter[fs.File], w io.Writer) error {
-	var tw *tar.Writer = tar.NewWriter(w)
-	return f2k.ErrorWarn(
-		func() error { return files2tar(ctx, files, tw) },
-		func() error { return tw.Close() },
-	)
-}
-
 func Files2TarBuilderNew(w io.Writer) f2k.SetFsFileBatch {
 	return func(ctx context.Context, many s2k.Iter[fs.File]) error {
-		return files2tarWriter(ctx, many, w)
+		var mapd s2k.Iter[f2k.Result[f2k.FileEx]] = s2k.IterMap(many, f2k.FileExFromStd)
+		return files2tarWriterExRes(ctx, mapd, w)
 	}
 }
 
 func Files2TarBuilderExNew(w io.Writer) f2k.SetFilesBatch {
 	return func(ctx context.Context, many s2k.Iter[f2k.FileEx]) error {
-		return files2tarWriterEx(ctx, many, w)
+		var mapd s2k.Iter[f2k.Result[f2k.FileEx]] = f2k.ResultWrapIter(many)
+		return files2tarWriterExRes(ctx, mapd, w)
 	}
 }
