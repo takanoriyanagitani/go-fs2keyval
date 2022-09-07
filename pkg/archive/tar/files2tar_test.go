@@ -58,10 +58,10 @@ func TestAll(t *testing.T) {
 			var wtr bytes.Buffer
 			var setter f2k.SetFsFileBatch = Files2TarBuilderNew(&wtr)
 			e := setter(context.Background(), s2k.IterFromArray([]fs.File{
-				f2k.MemFileNew("fn", []byte("hw"), 0644),
+				f2k.MemFileNew("fn", nil, 0644),
 			}))
 			if nil != e {
-				t.Fatalf("Unable to write empty tar: %v", e)
+				t.Fatalf("Unable to create tar: %v", e)
 			}
 
 			var br *bytes.Reader = bytes.NewReader(wtr.Bytes())
@@ -73,7 +73,7 @@ func TestAll(t *testing.T) {
 			}
 
 			checker(t, hdr.Name, "fn")
-			checker(t, hdr.Size, 2)
+			checker(t, hdr.Size, 0)
 
 			var buf bytes.Buffer
 			n, e := io.Copy(&buf, tr)
@@ -81,8 +81,8 @@ func TestAll(t *testing.T) {
 				t.Errorf("Unexpected error: %v", e)
 			}
 
-			checker(t, n, 2)
-			checkBytes(t, buf.Bytes(), []byte("hw"))
+			checker(t, n, 0)
+			checkBytes(t, buf.Bytes(), nil)
 		})
 
 		t.Run("many files", func(t *testing.T) {
@@ -120,6 +120,96 @@ func TestAll(t *testing.T) {
 
 			manyCheck("f1", []byte("hw"))
 			manyCheck("f2", []byte("hx"))
+
+		})
+	})
+
+	t.Run("Files2TarBuilderExNew", func(t *testing.T) {
+		t.Parallel()
+
+		t.Run("empty", func(t *testing.T) {
+			var wtr bytes.Buffer
+			var setter f2k.SetFilesBatch = Files2TarBuilderExNew(&wtr)
+			e := setter(context.Background(), s2k.IterEmptyNew[f2k.FileEx]())
+			if nil != e {
+				t.Fatalf("Unable to write empty tar: %v", e)
+			}
+
+			var br *bytes.Reader = bytes.NewReader(wtr.Bytes())
+			var tr *tar.Reader = tar.NewReader(br)
+
+			_, e = tr.Next()
+			if nil == e {
+				t.Errorf("Must be empty")
+			}
+		})
+
+		t.Run("single empty file", func(t *testing.T) {
+			var wtr bytes.Buffer
+			var setter f2k.SetFilesBatch = Files2TarBuilderExNew(&wtr)
+			e := setter(context.Background(), s2k.IterFromArray([]f2k.FileEx{
+				f2k.FileExNew(f2k.MemFileNew("fn", nil, 0644), "path/to/dir/empty.dat"),
+			}))
+			if nil != e {
+				t.Fatalf("Unable to write empty tar: %v", e)
+			}
+
+			var br *bytes.Reader = bytes.NewReader(wtr.Bytes())
+			var tr *tar.Reader = tar.NewReader(br)
+
+			hdr, e := tr.Next()
+			if nil != e {
+				t.Errorf("Unable to get header: %v", e)
+			}
+
+			checker(t, hdr.Name, "path/to/dir/empty.dat")
+			checker(t, hdr.Size, 0)
+
+			var buf bytes.Buffer
+			n, e := io.Copy(&buf, tr)
+			if nil != e && e != io.EOF {
+				t.Errorf("Unexpected error: %v", e)
+			}
+
+			checker(t, n, 0)
+			checkBytes(t, buf.Bytes(), nil)
+		})
+
+		t.Run("many files", func(t *testing.T) {
+			var wtr bytes.Buffer
+			var setter f2k.SetFilesBatch = Files2TarBuilderExNew(&wtr)
+			e := setter(context.Background(), s2k.IterFromArray([]f2k.FileEx{
+				f2k.FileExNew(f2k.MemFileNew("f1", []byte("hw"), 0644), "path/to/f1/ne.dat"),
+				f2k.FileExNew(f2k.MemFileNew("f2", []byte("hx"), 0644), "path/to/f2/ne.dat"),
+			}))
+			if nil != e {
+				t.Fatalf("Unable to write empty tar: %v", e)
+			}
+
+			var br *bytes.Reader = bytes.NewReader(wtr.Bytes())
+			var tr *tar.Reader = tar.NewReader(br)
+
+			manyCheck := func(name string, expected []byte) {
+				hdr, e := tr.Next()
+				if nil != e {
+					t.Errorf("Unable to get header: %v", e)
+				}
+
+				checker(t, hdr.Name, name)
+				checker(t, hdr.Size, 2)
+
+				var buf bytes.Buffer
+				n, e := io.Copy(&buf, tr)
+				if nil != e && e != io.EOF {
+					t.Errorf("Unexpected error: %v", e)
+				}
+
+				checker(t, n, 2)
+				checkBytes(t, buf.Bytes(), expected)
+			}
+
+			manyCheck("path/to/f1/ne.dat", []byte("hw"))
+			manyCheck("path/to/f2/ne.dat", []byte("hx"))
 
 		})
 	})

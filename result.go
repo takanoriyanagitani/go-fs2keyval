@@ -9,6 +9,7 @@ type Result[T any] interface {
 	Error() error
 	TryForEach(f func(T) error) error
 	UnwrapOrElse(f func() T) T
+	Map(f func(T) T) Result[T]
 }
 
 type resultOk[T any] struct{ val T }
@@ -17,6 +18,7 @@ func (r resultOk[T]) Value() T                         { return r.val }
 func (r resultOk[T]) Error() error                     { return nil }
 func (r resultOk[T]) TryForEach(f func(T) error) error { return f(r.val) }
 func (r resultOk[T]) UnwrapOrElse(_ func() T) T        { return r.val }
+func (r resultOk[T]) Map(f func(T) T) Result[T]        { return ResultNew(f(r.val), nil) }
 
 type resultNg[T any] struct{ err error }
 
@@ -24,6 +26,7 @@ func (r resultNg[T]) Value() (t T)                     { return }
 func (r resultNg[T]) Error() error                     { return r.err }
 func (r resultNg[T]) TryForEach(_ func(T) error) error { return r.err }
 func (r resultNg[T]) UnwrapOrElse(f func() T) T        { return f() }
+func (r resultNg[T]) Map(_ func(T) T) Result[T]        { return r }
 
 func ResultNew[T any](val T, err error) Result[T] {
 	if nil == err {

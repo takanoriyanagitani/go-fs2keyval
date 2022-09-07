@@ -21,11 +21,41 @@ type FileLike struct {
 	Val  []byte
 }
 
+type FileEx interface {
+	File() fs.File // base name only
+	Name() string  // full path
+}
+
+type fileEx struct {
+	raw fs.File
+	nam string
+}
+
+func (f fileEx) File() fs.File { return f.raw }
+func (f fileEx) Name() string  { return f.nam }
+
+func FileExNew(raw fs.File, nam string) FileEx {
+	return fileEx{
+		raw,
+		nam,
+	}
+}
+
+var fileExNew func(raw fs.File) func(nam string) FileEx = Curry(FileExNew)
+
+func FileExFromStd(raw fs.File) Result[FileEx] {
+	var rfi Result[fs.FileInfo] = File2Info(raw)
+	var rnm Result[string] = ResultMap(rfi, func(fi fs.FileInfo) string { return fi.Name() })
+	var nm2ex func(nam string) FileEx = fileExNew(raw)
+	return ResultMap(rnm, nm2ex)
+}
+
 type Batch2FileLike func(b s2k.Batch) s2k.Option[FileLike]
 
 type SetFilelikeBatch func(ctx context.Context, many s2k.Iter[FileLike]) error
 
 type SetFsFileBatch func(ctx context.Context, many s2k.Iter[fs.File]) error
+type SetFilesBatch func(ctx context.Context, many s2k.Iter[FileEx]) error
 
 var Utf8validator KeyValidator = utf8.Valid
 
