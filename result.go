@@ -12,6 +12,7 @@ type Result[T any] interface {
 	UnwrapOr(alt T) T
 	Map(f func(T) T) Result[T]
 	Ok() s2k.Option[T]
+	IsOk() bool
 }
 
 type resultOk[T any] struct{ val T }
@@ -23,6 +24,7 @@ func (r resultOk[T]) UnwrapOrElse(_ func(error) T) T   { return r.val }
 func (r resultOk[T]) UnwrapOr(_ T) T                   { return r.val }
 func (r resultOk[T]) Map(f func(T) T) Result[T]        { return ResultNew(f(r.val), nil) }
 func (r resultOk[T]) Ok() s2k.Option[T]                { return s2k.OptionNew(r.val) }
+func (r resultOk[T]) IsOk() bool                       { return true }
 
 func ResultOk[T any](t T) Result[T] { return ResultNew(t, nil) }
 
@@ -35,6 +37,7 @@ func (r resultNg[T]) UnwrapOrElse(f func(error) T) T   { return f(r.err) }
 func (r resultNg[T]) UnwrapOr(alt T) T                 { return alt }
 func (r resultNg[T]) Map(_ func(T) T) Result[T]        { return r }
 func (r resultNg[T]) Ok() s2k.Option[T]                { return s2k.OptionEmptyNew[T]() }
+func (r resultNg[T]) IsOk() bool                       { return false }
 
 func ResultNg[T any](err error) Result[T] { return resultNg[T]{err} }
 
