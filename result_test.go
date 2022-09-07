@@ -53,6 +53,7 @@ func TestResult(t *testing.T) {
 
 		var ing Result[int] = ResultNew(div(42, 0))
 		checkerMsg(t, func() bool { return nil != ing.Error() }, "Error nil")
+		checker(t, ing.Value(), 0)
 	})
 
 	t.Run("ResultBuilderNew1", func(t *testing.T) {
