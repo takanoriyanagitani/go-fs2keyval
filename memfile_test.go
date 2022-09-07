@@ -12,7 +12,7 @@ func checkerBuilder[T any](comp func(got, expected T) bool) func(t *testing.T, g
 		if !comp(got, expected) {
 			t.Errorf("Unexpected value got.\n")
 			t.Errorf("expected: %v\n", expected)
-			t.Errorf("got:      %v\n", got)
+			t.Fatalf("got:      %v\n", got)
 		}
 	}
 }
