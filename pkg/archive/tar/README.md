@@ -24,7 +24,7 @@
 
 ###### \*data units written
 
-- SSD 1,3
+- SSD 1,3,5
     - using: raw value(1 unit = 512\*1000 bytes)
     - raw value = Data Units Written
 - SSD 2
