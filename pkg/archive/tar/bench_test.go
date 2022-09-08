@@ -46,6 +46,9 @@ func BenchmarkTar(b *testing.B) {
 
 				b.ResetTimer()
 				e = setter(context.Background(), s2k.IterEmptyNew[f2k.Result[f2k.FileEx]]())
+				if nil != e {
+					b.Fatalf("Unable to set: %v", e)
+				}
 
 				e = w.Flush()
 				if nil != e {
@@ -82,6 +85,9 @@ func BenchmarkTar(b *testing.B) {
 
 				b.ResetTimer()
 				e = setter(context.Background(), s2k.IterFromArray(files))
+				if nil != e {
+					b.Fatalf("Unable to set: %v", e)
+				}
 
 				e = w.Flush()
 				if nil != e {
@@ -118,6 +124,9 @@ func BenchmarkTar(b *testing.B) {
 
 				b.ResetTimer()
 				e = setter(context.Background(), files)
+				if nil != e {
+					b.Fatalf("Unable to set: %v", e)
+				}
 
 				e = w.Flush()
 				if nil != e {
@@ -166,6 +175,9 @@ func BenchmarkTar(b *testing.B) {
 
 				b.ResetTimer()
 				e = setter(context.Background(), files)
+				if nil != e {
+					b.Fatalf("Unable to set: %v", e)
+				}
 
 				e = w.Flush()
 				if nil != e {
