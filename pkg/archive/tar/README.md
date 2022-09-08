@@ -29,4 +29,4 @@
     - raw value = HostWrites\_32MiB(ID 241)
 - SSD 4
     - using: (raw value) \* (1048576 \* 1024)/512,000
-    - raw value = HostWrites\_32MiB(ID 241)
+    - raw value = Total_Writes\_GiB(ID 241)
