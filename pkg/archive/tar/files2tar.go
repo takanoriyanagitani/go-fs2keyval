@@ -65,9 +65,16 @@ func Files2TarBuilderNew(w io.Writer) f2k.SetFsFileBatch {
 	}
 }
 
+func Files2TarBuilderExResNew(w io.Writer) f2k.SetFiles {
+	return func(ctx context.Context, many s2k.Iter[f2k.Result[f2k.FileEx]]) error {
+		return files2tarWriterExRes(ctx, many, w)
+	}
+}
+
 func Files2TarBuilderExNew(w io.Writer) f2k.SetFilesBatch {
 	return func(ctx context.Context, many s2k.Iter[f2k.FileEx]) error {
 		var mapd s2k.Iter[f2k.Result[f2k.FileEx]] = f2k.ResultWrapIter(many)
-		return files2tarWriterExRes(ctx, mapd, w)
+		var filesSetter f2k.SetFiles = Files2TarBuilderExResNew(w)
+		return filesSetter(ctx, mapd)
 	}
 }
