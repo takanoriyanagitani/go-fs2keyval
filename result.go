@@ -134,3 +134,13 @@ func ResultWrapIter[T any](i s2k.Iter[T]) s2k.Iter[Result[T]] {
 		return s2k.OptionMap(ot, ResultOk[T])
 	}
 }
+
+func ResultTryUnwrapAll[T any](results s2k.Iter[Result[T]]) Result[[]T] {
+	return s2k.IterReduce(results, ResultOk[[]T](nil), func(arr Result[[]T], r Result[T]) Result[[]T] {
+		return ResultFlatMap(r, func(t T) Result[[]T] {
+			return arr.Map(func(at []T) []T {
+				return append(at, t)
+			})
+		})
+	})
+}

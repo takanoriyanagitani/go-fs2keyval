@@ -283,4 +283,71 @@ func TestResult(t *testing.T) {
 		var rng Result[int] = ResultNg[int](fmt.Errorf("Must fail"))
 		checker(t, rng.IsOk(), false)
 	})
+
+	t.Run("ResultTryUnwrapAll", func(t *testing.T) {
+		t.Parallel()
+
+		t.Run("empty", func(t *testing.T) {
+			t.Parallel()
+
+			var ir s2k.Iter[Result[int]] = s2k.IterEmptyNew[Result[int]]()
+			var r Result[[]int] = ResultTryUnwrapAll(ir)
+			checker(t, r.IsOk(), true)
+
+			var ai []int = r.Value()
+			checker(t, len(ai), 0)
+		})
+
+		t.Run("single ok", func(t *testing.T) {
+			t.Parallel()
+
+			var ir s2k.Iter[Result[int]] = s2k.IterFromArray([]Result[int]{
+				ResultOk(42),
+			})
+			var r Result[[]int] = ResultTryUnwrapAll(ir)
+			checker(t, r.IsOk(), true)
+
+			var ai []int = r.Value()
+			checker(t, len(ai), 1)
+			checker(t, ai[0], 42)
+		})
+
+		t.Run("single ng", func(t *testing.T) {
+			t.Parallel()
+
+			var ir s2k.Iter[Result[int]] = s2k.IterFromArray([]Result[int]{
+				ResultNg[int](fmt.Errorf("Must fail")),
+			})
+			var r Result[[]int] = ResultTryUnwrapAll(ir)
+			checker(t, r.IsOk(), false)
+		})
+
+		t.Run("many ok", func(t *testing.T) {
+			t.Parallel()
+
+			var ir s2k.Iter[Result[int]] = s2k.IterFromArray([]Result[int]{
+				ResultOk(634),
+				ResultOk(333),
+			})
+			var r Result[[]int] = ResultTryUnwrapAll(ir)
+			checker(t, r.IsOk(), true)
+
+			var ai []int = r.Value()
+			checker(t, len(ai), 2)
+			checker(t, ai[0], 634)
+			checker(t, ai[1], 333)
+		})
+
+		t.Run("many ok, single ng", func(t *testing.T) {
+			t.Parallel()
+
+			var ir s2k.Iter[Result[int]] = s2k.IterFromArray([]Result[int]{
+				ResultOk(634),
+				ResultNg[int](fmt.Errorf("Must Fail")),
+				ResultOk(333),
+			})
+			var r Result[[]int] = ResultTryUnwrapAll(ir)
+			checker(t, r.IsOk(), false)
+		})
+	})
 }
