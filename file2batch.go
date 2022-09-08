@@ -95,7 +95,7 @@ type filesEx2batch func(bkt, key, val FileEx) Result[s2k.Batch]
 
 type namesChecker func(bkt, key, val string) bool
 
-var commonDirNameChecker namesChecker = func(bkt, key, val string) bool {
+var nameCheckerDefault namesChecker = func(bkt, key, val string) bool {
 	var sb []string = strings.SplitN(bkt, "/", 2)
 	var sk []string = strings.SplitN(key, "/", 2)
 	var sv []string = strings.SplitN(val, "/", 2)
@@ -105,6 +105,9 @@ var commonDirNameChecker namesChecker = func(bkt, key, val string) bool {
 		func() bool { return 2 == len(sv) },
 		func() bool { return sb[0] == sk[0] },
 		func() bool { return sb[0] == sv[0] },
+		func() bool { return "bucket" == sb[1] },
+		func() bool { return "key" == sk[1] },
+		func() bool { return "val" == sv[1] },
 	})
 	return s2k.IterReduce(i, true, func(b bool, f func() bool) bool {
 		return b && f()
@@ -124,7 +127,7 @@ func filesEx2batchBuilderNew(nchk namesChecker) func(files2batch) filesEx2batch 
 	}
 }
 
-var filesEx2batchDefault filesEx2batch = filesEx2batchBuilderNew(commonDirNameChecker)(files2batchDefault)
+var filesEx2batchDefault filesEx2batch = filesEx2batchBuilderNew(nameCheckerDefault)(files2batchDefault)
 
 func fileIter2batchBuilderNew(fe2b filesEx2batch) fileIter2batch {
 	return func(files s2k.Iter[FileEx]) Result[s2k.Batch] {
