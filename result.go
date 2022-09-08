@@ -144,3 +144,17 @@ func ResultTryUnwrapAll[T any](results s2k.Iter[Result[T]]) Result[[]T] {
 		})
 	})
 }
+
+func ResultFromBool[T any](val func() T, ok bool, ng func() error) Result[T] {
+	if ok {
+		return ResultOk(val())
+	}
+	return ResultNg[T](ng())
+}
+
+func ResultFilter[T any](r Result[T], ignore func(e error) bool) s2k.Option[Result[T]] {
+	if nil != r.Error() && ignore(r.Error()) {
+		return s2k.OptionEmptyNew[Result[T]]()
+	}
+	return s2k.OptionNew(r)
+}
