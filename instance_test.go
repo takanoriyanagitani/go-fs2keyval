@@ -22,7 +22,7 @@ func TestInstance(t *testing.T) {
 			"InstanceBuilderFsAutoDefault",
 		)
 
-		t.Run("abs", func(t *testing.T){
+		t.Run("abs", func(t *testing.T) {
 			var name string = filepath.Join(prefix, "abs.d")
 
 			var r Result[string] = InstanceBuilderFsAutoDefault(name)
@@ -31,5 +31,16 @@ func TestInstance(t *testing.T) {
 			var instance string = r.Value()
 			checker(t, len(instance), 36)
 		})
+
+		t.Cleanup(func() {
+			e := os.RemoveAll(prefix)
+			if nil != e {
+				t.Fatalf("Unable to remove dir: %v", e)
+			}
+		})
+	})
+
+	t.Run("InstanceBuilderFsEnvDefault", func(t *testing.T) {
+		t.Parallel()
 	})
 }

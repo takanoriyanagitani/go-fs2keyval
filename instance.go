@@ -1,6 +1,7 @@
 package fs2kv
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 )
@@ -12,8 +13,10 @@ type InstanceNew func(name string) error
 // A InstanceBuilderFsAuto creates new instance and returns its name.
 type InstanceBuilderFsAuto func(dirname string) Result[string]
 
-func instanceBuilderFsAutoNew(i InstanceNew) func(UniqueDirnameBuilder) InstanceBuilderFsAuto {
-	return func(nameBuilder UniqueDirnameBuilder) InstanceBuilderFsAuto {
+type InstanceNameProviderFs func() (dirname Result[string])
+
+func instanceBuilderFsAutoNew(i InstanceNew) func(InstanceNameProviderFs) InstanceBuilderFsAuto {
+	return func(nameBuilder InstanceNameProviderFs) InstanceBuilderFsAuto {
 		return func(dirname string) Result[string] {
 			var instanceName Result[string] = nameBuilder()
 			var fullPath Result[string] = ResultMap(
@@ -36,10 +39,31 @@ func instanceBuilderNewFsFullPath(mode os.FileMode) InstanceNew {
 	}
 }
 
+func instanceNameProviderEnvBuilder(key string) InstanceNameProviderFs {
+	return func() Result[string] {
+		var val string = os.Getenv(key)
+		return ResultFromBool(
+			func() string { return val },
+			0 < len(val),
+			func() error { return fmt.Errorf("Invalid instance name") },
+		)
+	}
+}
+
+var instanceNameProviderEnv InstanceNameProviderFs = instanceNameProviderEnvBuilder(
+	"FS2KEYVAL_INSTANCE_NAME",
+)
+
 var instanceBuilderFsFullPathDefault InstanceNew = instanceBuilderNewFsFullPath(0755)
+
+var instanceNameProviderUuid InstanceNameProviderFs = InstanceNameProviderFs(uuidDirnameBuilder)
 
 // InstanceBuilderFsAutoDefault creates new instance(dir).
 // Instance name will be auto generated(uuid).
 var InstanceBuilderFsAutoDefault InstanceBuilderFsAuto = instanceBuilderFsAutoNew(
 	instanceBuilderFsFullPathDefault,
-)(uuidDirnameBuilder)
+)(instanceNameProviderUuid)
+
+var InstanceBuilderFsEnvDefault InstanceBuilderFsAuto = instanceBuilderFsAutoNew(
+	instanceBuilderFsFullPathDefault,
+)(instanceNameProviderEnv)
