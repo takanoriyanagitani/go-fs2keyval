@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 )
 
-// A InstanceFsNew creates new instance.
+// A InstanceNew creates new instance.
 // Single instance may have many databases.
 type InstanceNew func(name string) error
 
@@ -38,6 +38,8 @@ func instanceBuilderNewFsFullPath(mode os.FileMode) InstanceNew {
 
 var instanceBuilderFsFullPathDefault InstanceNew = instanceBuilderNewFsFullPath(0755)
 
+// InstanceBuilderFsAutoDefault creates new instance(dir).
+// Instance name will be auto generated(uuid).
 var InstanceBuilderFsAutoDefault InstanceBuilderFsAuto = instanceBuilderFsAutoNew(
 	instanceBuilderFsFullPathDefault,
 )(uuidDirnameBuilder)
