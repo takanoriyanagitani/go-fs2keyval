@@ -42,5 +42,25 @@ func TestInstance(t *testing.T) {
 
 	t.Run("InstanceBuilderFsEnvDefault", func(t *testing.T) {
 		t.Parallel()
+
+		var FS2KEYVAL_INSTANCE_NAME string = os.Getenv("FS2KEYVAL_INSTANCE_NAME")
+		if len(FS2KEYVAL_INSTANCE_NAME) < 1 {
+			t.Skip("skipping instance name test(env)")
+		}
+
+		parentDirnames := []string{
+			filepath.Join(ITEST_FS2KV_INSTANCE_DIRNAME, "env.d", "test1.d"),
+			filepath.Join(ITEST_FS2KV_INSTANCE_DIRNAME, "env.d", "test2.d"),
+		}
+
+		for _, pdname := range parentDirnames {
+			t.Run(pdname, func(t *testing.T){
+				var iname Result[string] = InstanceBuilderFsEnvDefault(pdname)
+				checker(t, iname.IsOk(), true)
+
+				var s string = iname.Value()
+				checker(t, s, FS2KEYVAL_INSTANCE_NAME)
+			})
+		}
 	})
 }
