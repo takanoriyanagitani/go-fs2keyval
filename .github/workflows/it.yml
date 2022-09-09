@@ -24,9 +24,9 @@ jobs:
 
     - name: Test
       run: go test -race -coverprofile=coverage.txt -covermode=atomic ./...
-	  env:
-	    ITEST_FS2KV_TAR_DIRNAME:      ./test.d/itest_fs2kv_tar.d
-		ITEST_FS2KV_INSTANCE_DIRNAME: ./test.d/itest_fs2kv_instance.d
+      env:
+        ITEST_FS2KV_TAR_DIRNAME:      ./test.d/itest_fs2kv_tar.d
+        ITEST_FS2KV_INSTANCE_DIRNAME: ./test.d/itest_fs2kv_instance.d
         
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3
