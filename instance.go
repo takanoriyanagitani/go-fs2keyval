@@ -6,12 +6,38 @@ import (
 	"path/filepath"
 )
 
+const InstanceNameGetterEnvKeyDefault = "FS2KEYVAL_INSTANCE_NAME"
+
 // A InstanceNew creates new instance.
 // Single instance may have many databases.
 type InstanceNew func(name string) error
 
 // A InstanceBuilderFsAuto creates new instance and returns its name.
 type InstanceBuilderFsAuto func(dirname string) Result[string]
+
+type InstanceGetterEnv func(dirname string) (instanceName Result[string])
+
+func getenv(key string) (val Result[string]) {
+	var v string = os.Getenv(key)
+	return ResultFromBool(
+		func() string { return v },
+		0 < len(v),
+		func() error { return fmt.Errorf("empty val for key: %s", key) },
+	)
+}
+
+func instanceGetterEnvBuilderNew(key string) InstanceGetterEnv {
+	return func(dirname string) Result[string] {
+		var instanceName Result[string] = getenv(key)
+		return ResultMap(instanceName, func(s string) string {
+			return filepath.Join(dirname, s)
+		})
+	}
+}
+
+var InstanceGetterEnvDefault InstanceGetterEnv = instanceGetterEnvBuilderNew(
+	InstanceNameGetterEnvKeyDefault,
+)
 
 type InstanceNameProviderFs func() (dirname Result[string])
 
@@ -41,17 +67,12 @@ func instanceBuilderNewFsFullPath(mode os.FileMode) InstanceNew {
 
 func instanceNameProviderEnvBuilder(key string) InstanceNameProviderFs {
 	return func() Result[string] {
-		var val string = os.Getenv(key)
-		return ResultFromBool(
-			func() string { return val },
-			0 < len(val),
-			func() error { return fmt.Errorf("Invalid instance name") },
-		)
+		return getenv(key)
 	}
 }
 
 var instanceNameProviderEnv InstanceNameProviderFs = instanceNameProviderEnvBuilder(
-	"FS2KEYVAL_INSTANCE_NAME",
+	InstanceNameGetterEnvKeyDefault,
 )
 
 var instanceBuilderFsFullPathDefault InstanceNew = instanceBuilderNewFsFullPath(0755)
