@@ -31,7 +31,13 @@ func databaseListFsEnvBuilderNew(dlf DatabaseListFs) DatabaseListFsEnv {
 
 func file2dirs(limit int) func(f *os.File) Result[[]os.DirEntry] {
 	return func(f *os.File) Result[[]os.DirEntry] {
-		return ResultNew(f.ReadDir(limit))
+		return ResultNew(f.ReadDir(limit)).OrElse(func(e error) Result[[]os.DirEntry] {
+			return ResultFromBool(
+				func() []os.DirEntry { return nil },
+				io.EOF == e,
+				func() error { return e },
+			)
+		})
 	}
 }
 

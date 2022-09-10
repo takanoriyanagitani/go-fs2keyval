@@ -28,6 +28,7 @@ jobs:
         ITEST_FS2KV_TAR_DIRNAME:      ./test.d/itest_fs2kv_tar.d
         ITEST_FS2KV_INSTANCE_DIRNAME: ./test.d/itest_fs2kv_instance.d
         FS2KEYVAL_INSTANCE_NAME:      ./test.d/itest_fs2kv_env.d
+        ITEST_FS2KV_DB_ENV_DIR:       ./test.d/itest_fs2kv_db_env.d
         
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3
