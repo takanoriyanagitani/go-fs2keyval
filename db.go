@@ -38,7 +38,7 @@ func file2dirs(limit int) func(f *os.File) Result[[]os.DirEntry] {
 func fullpath2dirs(limit int) func(fullpath string) Result[[]os.DirEntry] {
 	var file2items func(f *os.File) Result[[]os.DirEntry] = file2dirs(limit)
 	return func(fullpath string) Result[[]os.DirEntry] {
-		var fdir Result[*os.File] = ResultNew(os.Open(fullpath))
+		var fdir Result[*os.File] = ResultNew(os.Open(filepath.Clean(fullpath)))
 		var items Result[[]os.DirEntry] = ResultFlatMap(fdir, file2items)
 		fdir.Ok().ForEach(func(f *os.File) {
 			_ = f.Close() // ignore error on close
