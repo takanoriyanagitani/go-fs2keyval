@@ -14,15 +14,15 @@ import (
 // Single archive file may contain many batches.
 type DatabaseNew func(io.Writer) SetFiles
 
-type DatabaseListFsEnvDefault func(limit int) func(rootdir string) Result[[]string]
-type DatabaseListFs func(instanceName string) DatabaseListFsEnvDefault
+type DatabaseListFsEnv func(limit int) func(rootdir string) Result[[]string]
+type DatabaseListFs func(instanceName string) DatabaseListFsEnv
 
-func databaseListFsEnvBuilderNew(dlf DatabaseListFs) DatabaseListFsEnvDefault {
+func databaseListFsEnvBuilderNew(dlf DatabaseListFs) DatabaseListFsEnv {
 	return func(limit int) func(rootdir string) Result[[]string] {
 		return func(rootdir string) Result[[]string] {
 			var iname Result[string] = InstanceGetterEnvDefault()
 			return ResultFlatMap(iname, func(s string) Result[[]string] {
-				var dlfed DatabaseListFsEnvDefault = dlf(s)
+				var dlfed DatabaseListFsEnv = dlf(s)
 				return dlfed(limit)(rootdir)
 			})
 		}
@@ -53,7 +53,7 @@ func items2strings(i s2k.Iter[os.DirEntry]) s2k.Iter[string] {
 	return s2k.IterMap(i, dirent2string)
 }
 
-var DatabaseListFsDefault DatabaseListFs = func(instanceName string) DatabaseListFsEnvDefault {
+var databaseListFsDefault DatabaseListFs = func(instanceName string) DatabaseListFsEnv {
 	return func(limit int) func(rootdir string) Result[[]string] {
 		var path2dirs func(p string) Result[[]os.DirEntry] = fullpath2dirs(limit)
 		return func(rootdir string) Result[[]string] {
@@ -65,3 +65,7 @@ var DatabaseListFsDefault DatabaseListFs = func(instanceName string) DatabaseLis
 		}
 	}
 }
+
+var DatabaseListFsEnvDefault DatabaseListFsEnv = databaseListFsEnvBuilderNew(
+	databaseListFsDefault,
+)
