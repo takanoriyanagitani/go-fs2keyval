@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"sort"
 )
 
 func TestDb(t *testing.T) {
@@ -179,6 +180,7 @@ func TestDb(t *testing.T) {
 			checker(t, dbNames.IsOk(), true)
 
 			var ss []string = dbNames.Value()
+			sort.Strings(ss)
 			checker(t, len(ss), 2)
 
 			checker(t, ss[0], "dummy-db1.tar")
@@ -226,6 +228,7 @@ func TestDb(t *testing.T) {
 			checker(t, dbNames.IsOk(), true)
 
 			var ss []string = dbNames.Value()
+			sort.Strings(ss)
 			checker(t, len(ss), 1)
 
 			checker(t, ss[0], "dummy-db1.tar")
