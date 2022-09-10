@@ -212,6 +212,7 @@ func TestDb(t *testing.T) {
 				return f.Close()
 			}
 
+			// one of database tar file will be got
 			requests := []string{
 				"dummy-db1.tar",
 				"dummy-db2.tar",
@@ -230,8 +231,6 @@ func TestDb(t *testing.T) {
 			var ss []string = dbNames.Value()
 			sort.Strings(ss)
 			checker(t, len(ss), 1)
-
-			checker(t, ss[0], "dummy-db1.tar")
 		})
 	})
 }
