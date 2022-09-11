@@ -233,4 +233,78 @@ func TestDb(t *testing.T) {
 			checker(t, len(ss), 1)
 		})
 	})
+
+	t.Run("DatabaseDropFsEnvDefault", func(t *testing.T) {
+		t.Parallel()
+
+		var ITEST_FS2KV_DB_ENV_DIR string = os.Getenv("ITEST_FS2KV_DB_ENV_DIR")
+		if len(ITEST_FS2KV_DB_ENV_DIR) < 1 {
+			t.Skip("No db env test")
+		}
+
+		var FS2KEYVAL_INSTANCE_NAME string = os.Getenv(InstanceNameGetterEnvKeyDefault)
+		if len(FS2KEYVAL_INSTANCE_NAME) < 1 {
+			t.Skip("No db env test")
+		}
+
+		initDir := func(dirname string) error {
+			e := os.RemoveAll(dirname)
+			if nil != e {
+				return e
+			}
+
+			return os.MkdirAll(dirname, 0755)
+		}
+
+		t.Run("valid db", func(t *testing.T) {
+			t.Parallel()
+
+			var rootdir = filepath.Join(
+				ITEST_FS2KV_DB_ENV_DIR,
+				"drop-validdb-instance.d",
+			)
+			var dirname = filepath.Join(
+				ITEST_FS2KV_DB_ENV_DIR,
+				"drop-validdb-instance.d",
+				FS2KEYVAL_INSTANCE_NAME,
+			)
+			e := initDir(dirname)
+			if nil != e {
+				t.Fatalf("Unable to initialize dir: %v", e)
+			}
+
+			createDummyDatabase := func(dbname string) error {
+				f, e := os.Create(filepath.Join(dirname, dbname))
+				if nil != e {
+					return e
+				}
+				return f.Close()
+			}
+
+			// one of database tar file will be got
+			requests := []string{
+				"valid-dummy-db1.tar",
+				"valid-dummy-db2.tar",
+			}
+
+			for _, req := range requests {
+				e = createDummyDatabase(req)
+				if nil != e {
+					t.Fatalf("Unable to create dummy database: %v", e)
+				}
+			}
+
+			var dropper func(dbname string) error = DatabaseDropFsEnvDefault(rootdir)
+			for _, req := range requests {
+				t.Run(req, func(t *testing.T) {
+					t.Parallel()
+
+					e := dropper(req)
+					if nil != e {
+						t.Errorf("Unable to drop: %v", e)
+					}
+				})
+			}
+		})
+	})
 }
