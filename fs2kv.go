@@ -47,6 +47,8 @@ type SetFsFileBatch func(ctx context.Context, many s2k.Iter[fs.File]) error
 type SetFilesBatch func(ctx context.Context, many s2k.Iter[FileEx]) error
 type SetFiles func(ctx context.Context, files s2k.Iter[Result[FileEx]]) error
 
+type GetFiles func(ctx context.Context) Result[s2k.Iter[FileEx]]
+
 type BatchIter2Fs func(ctx context.Context, many s2k.Iter[s2k.Batch]) error
 
 func batchIter2fsBuilderNew(bi2f BatchIter2Files) func(SetFiles) BatchIter2Fs {

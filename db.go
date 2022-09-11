@@ -14,6 +14,10 @@ import (
 // Single archive file may contain many batches.
 type DatabaseNew func(io.Writer) SetFiles
 
+// A DatabaseGetBatchIter prepare batch iter getter for io.Reader.
+// For example, tar driver will get batch files from tar file.
+type DatabaseGetBatchIter func(io.Reader) GetFiles
+
 type DatabaseListFsEnv func(limit int) func(rootdir string) Result[[]string]
 type DatabaseListFs func(instanceName string) DatabaseListFsEnv
 
