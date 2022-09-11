@@ -155,6 +155,7 @@ func ResultFromBool[T any](val func() T, ok bool, ng func() error) Result[T] {
 	return ResultNg[T](ng())
 }
 
+// ResultFilter converts errors to be ignored into Empty option
 func ResultFilter[T any](r Result[T], ignore func(e error) bool) s2k.Option[Result[T]] {
 	if nil != r.Error() && ignore(r.Error()) {
 		return s2k.OptionEmptyNew[Result[T]]()
