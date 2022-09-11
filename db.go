@@ -17,6 +17,9 @@ type DatabaseNew func(io.Writer) SetFiles
 type DatabaseListFsEnv func(limit int) func(rootdir string) Result[[]string]
 type DatabaseListFs func(instanceName string) DatabaseListFsEnv
 
+type DatabaseDropFsEnv func(rootdir string) func(dbname string) error
+type DatabaseDropFs func(instanceName string) DatabaseDropFsEnv
+
 func databaseListFsEnvBuilderNew(dlf DatabaseListFs) DatabaseListFsEnv {
 	return func(limit int) func(rootdir string) Result[[]string] {
 		return func(rootdir string) Result[[]string] {
@@ -72,6 +75,33 @@ var databaseListFsDefault DatabaseListFs = func(instanceName string) DatabaseLis
 	}
 }
 
+var databaseDropFsDefault DatabaseDropFs = func(instance string) DatabaseDropFsEnv {
+	return func(rootdir string) func(dbname string) error {
+		return func(dbname string) error {
+			var parent string = filepath.Join(rootdir, instance)
+			var full string = filepath.Join(parent, dbname)
+			return os.RemoveAll(full)
+		}
+	}
+}
+
+func databaseDropFsEnvBuilderNew(d2f DatabaseDropFs) DatabaseDropFsEnv {
+	return func(rootdir string) func(dbname string) error {
+		return func(dbname string) error {
+			var iname Result[string] = InstanceGetterEnvDefault()
+			var rdrop Result[DatabaseDropFsEnv] = ResultMap(iname, d2f)
+			var re Result[error] = ResultMap(rdrop, func(d DatabaseDropFsEnv) error {
+				return d(rootdir)(dbname)
+			})
+			return re.UnwrapOrElse(Identity[error])
+		}
+	}
+}
+
 var DatabaseListFsEnvDefault DatabaseListFsEnv = databaseListFsEnvBuilderNew(
 	databaseListFsDefault,
+)
+
+var DatabaseDropFsEnvDefault DatabaseDropFsEnv = databaseDropFsEnvBuilderNew(
+	databaseDropFsDefault,
 )

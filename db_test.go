@@ -3,8 +3,8 @@ package fs2kv
 import (
 	"os"
 	"path/filepath"
-	"testing"
 	"sort"
+	"testing"
 )
 
 func TestDb(t *testing.T) {
