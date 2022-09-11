@@ -256,7 +256,7 @@ func TestDb(t *testing.T) {
 			return os.MkdirAll(dirname, 0755)
 		}
 
-		t.Run("valid db", func(t *testing.T) {
+		t.Run("many valid db", func(t *testing.T) {
 			t.Parallel()
 
 			var rootdir = filepath.Join(
@@ -281,10 +281,10 @@ func TestDb(t *testing.T) {
 				return f.Close()
 			}
 
-			// one of database tar file will be got
 			requests := []string{
 				"valid-dummy-db1.tar",
 				"valid-dummy-db2.tar",
+				"valid-dummy-db3.tar",
 			}
 
 			for _, req := range requests {
@@ -296,15 +296,72 @@ func TestDb(t *testing.T) {
 
 			var dropper func(dbname string) error = DatabaseDropFsEnvDefault(rootdir)
 			for _, req := range requests {
+				q := req
 				t.Run(req, func(t *testing.T) {
 					t.Parallel()
 
-					e := dropper(req)
+					e := dropper(q)
 					if nil != e {
 						t.Errorf("Unable to drop: %v", e)
 					}
 				})
 			}
+		})
+
+		t.Run("single valid db", func(t *testing.T) {
+			t.Parallel()
+
+			var rootdir = filepath.Join(
+				ITEST_FS2KV_DB_ENV_DIR,
+				"drop-single-validdb-instance.d",
+			)
+			var dirname = filepath.Join(
+				ITEST_FS2KV_DB_ENV_DIR,
+				"drop-single-validdb-instance.d",
+				FS2KEYVAL_INSTANCE_NAME,
+			)
+			e := initDir(dirname)
+			if nil != e {
+				t.Fatalf("Unable to initialize dir: %v", e)
+			}
+
+			createDummyDatabase := func(dbname string) error {
+				f, e := os.Create(filepath.Join(dirname, dbname))
+				if nil != e {
+					return e
+				}
+				return f.Close()
+			}
+
+			requests := []string{
+				"valid-dummy-db1.tar",
+			}
+
+			for _, req := range requests {
+				e = createDummyDatabase(req)
+				if nil != e {
+					t.Fatalf("Unable to create dummy database: %v", e)
+				}
+			}
+
+			var dropper func(dbname string) error = DatabaseDropFsEnvDefault(rootdir)
+			for _, req := range requests {
+				q := req
+				t.Run(req, func(t *testing.T) {
+					t.Parallel()
+
+					e := dropper(q)
+					if nil != e {
+						t.Errorf("Unable to drop: %v", e)
+					}
+					var dbNames Result[[]string] = DatabaseListFsEnvDefault(2)(rootdir)
+					checker(t, dbNames.IsOk(), true)
+
+					var names []string = dbNames.Value()
+					checker(t, len(names), 0)
+				})
+			}
+
 		})
 	})
 }
