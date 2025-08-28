@@ -20,15 +20,12 @@ github.com/nwaples/rardecode v1.1.0 h1:vSxaY8vQhOcVr4mm5e8XllHWTiM4JF507A0Katqw7
 github.com/nwaples/rardecode v1.1.0/go.mod h1:5DzqNKiOdpKKBH87u8VlvAnPZMXcGRhxWkRpHbbfGS0=
 github.com/pierrec/lz4/v4 v4.1.2 h1:qvY3YFXRQE/XB8MlLzJH7mSzBs74eA2gg52YTk6jUPM=
 github.com/pierrec/lz4/v4 v4.1.2/go.mod h1:gZWDp/Ze/IJXGXf23ltt2EXimqmTUXEy0GFuRQyBid4=
-github.com/takanoriyanagitani/go-sql2keyval v0.1.0 h1:gjLrtbPgTLiH7q+clKsGYgt07mU5HBL7SvRSfL9PXI8=
-github.com/takanoriyanagitani/go-sql2keyval v0.1.0/go.mod h1:2nDsKssUnTMkRJKc5AknLdJV9Nuo08cFXm0QXQH1be8=
-github.com/takanoriyanagitani/go-sql2keyval v0.5.0 h1:KeSUdn9JtL7Yo9TaSFWf8fCZdqS9CtRjNfV5nzF7MmE=
-github.com/takanoriyanagitani/go-sql2keyval v0.5.0/go.mod h1:olohv8venEYVbUBv1tG0rmS9rJID4vc53XRUbie6NHw=
 github.com/takanoriyanagitani/go-sql2keyval v0.6.0 h1:1Lgqf3+hvjJDiEhTH+eSd/dfYW9Zz8hMW8cFyNsZanE=
 github.com/takanoriyanagitani/go-sql2keyval v0.6.0/go.mod h1:olohv8venEYVbUBv1tG0rmS9rJID4vc53XRUbie6NHw=
 github.com/ulikunitz/xz v0.5.8/go.mod h1:nbz6k7qbPmH4IRqmfOplQw/tblSgqTqBwxkY0oWt/14=
-github.com/ulikunitz/xz v0.5.9 h1:RsKRIA2MO8x56wkkcd3LbtcE/uMszhb6DpRf+3uwa3I=
 github.com/ulikunitz/xz v0.5.9/go.mod h1:nbz6k7qbPmH4IRqmfOplQw/tblSgqTqBwxkY0oWt/14=
+github.com/ulikunitz/xz v0.5.14 h1:uv/0Bq533iFdnMHZdRBTOlaNMdb1+ZxXIlHDZHIHcvg=
+github.com/ulikunitz/xz v0.5.14/go.mod h1:nbz6k7qbPmH4IRqmfOplQw/tblSgqTqBwxkY0oWt/14=
 github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 h1:nIPpBwaJSVYIxUFsDv3M8ofmx9yWTog9BfvIu0q41lo=
 github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8/go.mod h1:HUYIGzjTL3rfEspMxjDjgmT5uz5wzYJKVo23qUhYTos=
 golang.org/x/xerrors v0.0.0-20191204190536-9bdfabe68543/go.mod h1:I/5z698sn9Ka8TeJc9MKroUUfqBBauWjQqLJ2OPfmY0=
